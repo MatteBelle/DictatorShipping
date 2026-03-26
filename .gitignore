@@ -1,0 +1,32 @@
+# Python virtual environment
+.venv/
+
+# Compiled Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Launcher artifacts
+.shortcut_created
+
+# Generated icon (rebuilt from source JPG automatically)
+DictatorShipping.ico
+
+# User data & config (privacy — contains personal settings and history)
+# These live in %APPDATA%\DictatorShipping\ at runtime, not in the repo,
+# but guard against accidental inclusion
+settings.json
+history.json
+error.log
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
