@@ -1,6 +1,12 @@
 # Python virtual environment
 .venv/
 
+# PyInstaller artifacts
+build/
+dist/
+*.spec
+DictatorShipping-windows.zip
+
 # Compiled Python
 __pycache__/
 *.py[cod]
@@ -30,3 +36,7 @@ desktop.ini
 .vscode/
 .idea/
 *.swp
+
+# Local session notes (keep locally, not in repo)
+*.txt
+!requirements.txt
