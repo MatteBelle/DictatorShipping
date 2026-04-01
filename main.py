@@ -10,7 +10,6 @@ APP_DIR = Path(__file__).parent
 from config.settings import Settings, _config_dir
 from audio.recorder import AudioRecorder
 from transcription.whisper_engine import WhisperEngine
-from llm.ollama_client import OllamaClient
 from output.text_injector import TextInjector
 from hotkey.hotkey_manager import HotkeyManager
 from ui.app_window import AppWindow
@@ -73,11 +72,10 @@ def main():
     settings = Settings()
     recorder = AudioRecorder(settings)
     whisper = WhisperEngine(settings)
-    ollama = OllamaClient(settings)
     injector = TextInjector(settings)
-    hotkey_mgr = HotkeyManager(settings)
+    hotkey_mgr = HotkeyManager()
 
-    app = AppWindow(settings, recorder, whisper, ollama, injector, hotkey_mgr, config_dir, APP_DIR)
+    app = AppWindow(settings, recorder, whisper, injector, hotkey_mgr, config_dir, APP_DIR)
 
     # Single-instance guard — must happen after app is created so the listener
     # can call app.show(). Exits immediately if another instance is running.
@@ -85,7 +83,7 @@ def main():
 
     tray = TrayManager(
         on_show_hide=app.toggle_visibility,
-        on_quit=app._quit,
+        on_quit=lambda: app.after(0, app._quit),
         app_dir=APP_DIR,
     )
     tray_ok = tray.start()
