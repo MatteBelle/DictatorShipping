@@ -8,22 +8,18 @@ from pathlib import Path
 DEFAULTS = {
     "hotkey": "<ctrl>+<space>",
     "language": "auto",
-    "formality": "Neutral",
     "auto_punctuation": True,
     "whisper_model": "small",
     "whisper_device": "auto",
     "whisper_compute_type": "auto",
-    "ollama_url": "http://localhost:11434",
-    "ollama_model": "llama3.2",
     "injection_delay_ms": 175,
     "use_clipboard_fallback": False,
-    "always_on_top": True,
+    "always_on_top": False,
     "appearance_mode": "dark",
     "window_position": None,
     "input_device_index": None,
     "sample_rate": 16000,
     "recording_mode": "hold",
-    "max_history": 15,
 }
 
 

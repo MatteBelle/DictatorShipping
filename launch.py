@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
 DictatorShipping Launcher — stdlib only (runs before any packages are installed).
-Handles: venv creation, pip install, Ollama check, then launches main.py.
+Handles: venv creation, pip install, then launches main.py.
 """
 
 import os
-import re
 import subprocess
 import sys
 import threading
@@ -55,28 +54,8 @@ def _packages_installed() -> bool:
     return _run_silent([
         str(VENV_PYTHON), "-c",
         "import customtkinter, faster_whisper, sounddevice, pynput, "
-        "pyperclip, requests, pystray, PIL",
+        "pyperclip, pystray, PIL",
     ]).returncode == 0
-
-
-def _ollama_running() -> bool:
-    try:
-        import urllib.request
-        urllib.request.urlopen("http://localhost:11434/api/tags", timeout=2)
-        return True
-    except Exception:
-        return False
-
-
-def _ollama_model_exists(model: str) -> bool:
-    try:
-        import urllib.request, json
-        with urllib.request.urlopen("http://localhost:11434/api/tags", timeout=3) as r:
-            data = json.loads(r.read())
-        names = [m["name"] for m in data.get("models", [])]
-        return any(model.split(":")[0] in n for n in names)
-    except Exception:
-        return False
 
 
 # ---------------------------------------------------------------------------
@@ -277,41 +256,6 @@ def _install_packages(ui: SetupWindow):
         raise RuntimeError("pip install failed — check the log above.")
 
 
-def _check_ollama(ui: SetupWindow):
-    ui.set_step("Checking Ollama…", "Ollama is used for formality rewriting (optional).")
-    ui.set_progress(78)
-
-    if not _ollama_running():
-        ui.log("Ollama is not running — formality rewriting will be unavailable.")
-        ui.log("Install from https://ollama.com and run: ollama pull llama3.2")
-        return
-
-    model = "llama3.2"
-    if _ollama_model_exists(model):
-        ui.log(f"Ollama model '{model}' already downloaded. ✓")
-        return
-
-    ui.set_step(
-        f"Downloading Ollama model '{model}'…",
-        "~2 GB download. This only happens once.",
-    )
-    ui.set_progress(82)
-
-    proc = subprocess.Popen(
-        ["ollama", "pull", model],
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        text=True, creationflags=_NO_WINDOW,
-    )
-    for line in proc.stdout:
-        clean = line.strip()
-        if clean:
-            ui.log(clean)
-            m = re.search(r"(\d+)%", clean)
-            if m:
-                ui.set_progress(82 + int(m.group(1)) * 0.14)
-    proc.wait()
-
-
 def _ensure_ico():
     """Convert DictatorShipping.jpg → .ico via venv Pillow (regenerates if JPG is newer)."""
     ico = APP_DIR / "DictatorShipping.ico"
@@ -412,7 +356,6 @@ def _worker(ui: SetupWindow):
             ui.set_progress(72)
             ui.log("Dependencies already installed. ✓")
 
-        _check_ollama(ui)
         _launch_app(ui)
 
     except Exception as exc:
