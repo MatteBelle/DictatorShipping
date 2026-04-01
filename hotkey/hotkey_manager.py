@@ -32,22 +32,22 @@ def _parse_hotkey(hotkey_str: str) -> tuple[set, keyboard.Key | keyboard.KeyCode
     return modifiers, trigger
 
 
+_HOTKEY = "<ctrl>+<space>"
+
+
 class HotkeyManager:
-    def __init__(self, settings):
-        self._settings = settings
+    def __init__(self):
         self._listener: keyboard.Listener | None = None
         self._pressed_keys: set = set()
         self._hotkey_active = False
         self._lock = threading.Lock()
         self._on_press_cb: Callable | None = None
         self._on_release_cb: Callable | None = None
-        self._modifiers: set = set()
-        self._trigger: keyboard.Key | keyboard.KeyCode | None = None
+        self._modifiers, self._trigger = _parse_hotkey(_HOTKEY)
 
     def start(self, on_press_cb: Callable, on_release_cb: Callable):
         self._on_press_cb = on_press_cb
         self._on_release_cb = on_release_cb
-        self._reload_hotkey()
         self._listener = keyboard.Listener(
             on_press=self._on_key_press,
             on_release=self._on_key_release,
@@ -59,14 +59,6 @@ class HotkeyManager:
         if self._listener is not None:
             self._listener.stop()
             self._listener = None
-
-    def rebind(self, new_hotkey: str):
-        self._settings.set("hotkey", new_hotkey)
-        self._reload_hotkey()
-
-    def _reload_hotkey(self):
-        hotkey_str = self._settings.get("hotkey", "<ctrl>+<space>")
-        self._modifiers, self._trigger = _parse_hotkey(hotkey_str)
 
     def _key_matches_trigger(self, key) -> bool:
         if self._trigger is None:
