@@ -8,26 +8,35 @@ def _history_path(config_dir: Path) -> Path:
     return config_dir / "history.json"
 
 
-def load_history(config_dir: Path, max_entries: int) -> list[dict]:
+def load_history(config_dir: Path) -> list[dict]:
     path = _history_path(config_dir)
     if not path.exists():
         return []
     try:
         with open(path, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        # Keep only the most recent max_entries
-        return data[-max_entries:] if len(data) > max_entries else data
+            return json.load(f)
     except (json.JSONDecodeError, OSError):
         return []
 
 
-def save_history(config_dir: Path, history: list[dict], max_entries: int):
+def save_history(config_dir: Path, history: list[dict]):
     path = _history_path(config_dir)
     tmp = path.with_suffix(".tmp")
-    trimmed = history[-max_entries:] if len(history) > max_entries else history
     try:
         with open(tmp, "w", encoding="utf-8") as f:
-            json.dump(trimmed, f, indent=2, ensure_ascii=False)
+            json.dump(history, f, indent=2, ensure_ascii=False)
+        os.replace(tmp, path)
+    except OSError:
+        pass
+
+
+def clear_history(config_dir: Path) -> None:
+    """Overwrite the history file with an empty list."""
+    path = _history_path(config_dir)
+    tmp = path.with_suffix(".tmp")
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump([], f)
         os.replace(tmp, path)
     except OSError:
         pass
