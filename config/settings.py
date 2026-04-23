@@ -48,8 +48,31 @@ class Settings:
                 try:
                     with open(self._path, "r", encoding="utf-8") as f:
                         saved = json.load(f)
-                    self._data = {**DEFAULTS, **saved}
-                except (json.JSONDecodeError, OSError):
+
+                    # Validate structure
+                    if not isinstance(saved, dict):
+                        raise ValueError("Settings must be a dictionary")
+
+                    # Sanitize values - only accept keys that exist in DEFAULTS
+                    validated = dict(DEFAULTS)
+                    for key, value in saved.items():
+                        if key not in DEFAULTS:
+                            continue  # Ignore unknown keys
+
+                        # Type validation
+                        expected_type = type(DEFAULTS[key])
+                        if expected_type is not type(None):
+                            if not isinstance(value, expected_type):
+                                # Type mismatch - use default
+                                continue
+
+                        validated[key] = value
+
+                    self._data = validated
+                except (json.JSONDecodeError, OSError, ValueError) as e:
+                    print(
+                        f"[Settings] Load error: {e}, using defaults", file=sys.stderr
+                    )
                     self._data = dict(DEFAULTS)
             else:
                 self._data = dict(DEFAULTS)

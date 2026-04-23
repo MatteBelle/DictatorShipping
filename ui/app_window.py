@@ -17,6 +17,7 @@ _FONT_FAMILY = (
 def _f(size: int, weight: str = "normal") -> ctk.CTkFont:
     return ctk.CTkFont(family=_FONT_FAMILY, size=size, weight=weight)
 
+from pynput import keyboard as pynput_keyboard
 from config import history_store
 from config.history_store import make_entry
 from ui.history_window import HistoryWindow
@@ -317,17 +318,30 @@ class AppWindow(ctk.CTk):
         )
         self._copy_trans_btn.pack(side="right", padx=(3, 0))
 
-        # ── Record button ─────────────────────────────────────────────
+        # ── Record / cancel button row ────────────────────────────────
+        self._btn_row = ctk.CTkFrame(self, fg_color="transparent")
+        self._btn_row.pack(fill="x", padx=14, pady=(4, 0))
+
         self._record_btn = ctk.CTkButton(
-            self,
+            self._btn_row,
             text=self._btn_label(),
             height=36, corner_radius=10,
             font=_f(12, "bold"),
             fg_color=ACCENT, hover_color=ACCENT_HOVER, text_color=TEXT1,
         )
-        self._record_btn.pack(fill="x", padx=14, pady=(4, 0))
+        self._record_btn.pack(fill="x", expand=True)
         self._record_btn.bind("<ButtonPress-1>",   lambda e: self._on_btn_press())
         self._record_btn.bind("<ButtonRelease-1>", lambda e: self._on_btn_release())
+
+        self._cancel_btn = ctk.CTkButton(
+            self._btn_row,
+            text="✕  ESC",
+            width=72, height=36, corner_radius=10,
+            font=_f(12, "bold"),
+            fg_color="#b91c1c", hover_color="#991b1b", text_color=TEXT1,
+            command=self._cancel_recording,
+        )
+        # Not packed yet — shown only during recording
 
         # ── Waveform (hidden until recording starts) ──────────────────
         self._wave_frame = ctk.CTkFrame(
@@ -539,6 +553,10 @@ class AppWindow(ctk.CTk):
             on_press_cb=self._on_hotkey_press,
             on_release_cb=self._on_hotkey_release,
         )
+        self._hotkey_mgr.set_cancel_callback(
+            pynput_keyboard.Key.esc,
+            lambda: self.after(0, self._cancel_recording),
+        )
 
     def _on_hotkey_press(self):
         if self._mode() == "hold":
@@ -583,6 +601,10 @@ class AppWindow(ctk.CTk):
             hover_color="#dc2626",
             text="⏹   RECORDING…",
         )
+        # Show cancel button beside record button
+        self._cancel_btn.pack(side="right", padx=(4, 0))
+        self._record_btn.pack_forget()
+        self._record_btn.pack(side="left", fill="x", expand=True)
         # Show waveform
         self._wave_history = []
         self._waveform_show()
@@ -594,6 +616,9 @@ class AppWindow(ctk.CTk):
         self._is_recording = False
         audio = self._recorder.stop()
         self._waveform_hide()
+        self._cancel_btn.pack_forget()
+        self._record_btn.pack_forget()
+        self._record_btn.pack(fill="x")
         self._record_btn.configure(
             fg_color=ACCENT,
             hover_color=ACCENT_HOVER,
@@ -609,6 +634,23 @@ class AppWindow(ctk.CTk):
         self._t_process_start = time.perf_counter()
         self._set_status("Transcribing…", "transcribing")
         threading.Thread(target=self._worker, args=(audio,), daemon=True).start()
+
+    def _cancel_recording(self):
+        if not self._is_recording:
+            return
+        self._is_recording = False
+        self._recorder.stop()
+        self._waveform_hide()
+        self._cancel_btn.pack_forget()
+        self._record_btn.pack_forget()
+        self._record_btn.pack(fill="x")
+        self._record_btn.configure(
+            fg_color=ACCENT,
+            hover_color=ACCENT_HOVER,
+            text=self._btn_label(),
+        )
+        self._set_status("Cancelled", "error")
+        self.after(2000, self._restore_idle_status)
 
     def _worker(self, audio):
         try:
@@ -694,6 +736,8 @@ class AppWindow(ctk.CTk):
     # ── Async startup ─────────────────────────────────────────────────────────
 
     def _load_whisper_async(self):
+        self._record_btn.configure(state="disabled")
+
         def _load():
             self._whisper.load_model(
                 progress_cb=lambda msg: self.after(
@@ -701,6 +745,7 @@ class AppWindow(ctk.CTk):
                 )
             )
             device = self._whisper.active_device()
+            self.after(0, lambda: self._record_btn.configure(state="normal"))
             self.after(0, lambda: self._set_status(f"Idle  ·  {device}", "idle"))
 
         threading.Thread(target=_load, daemon=True).start()

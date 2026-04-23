@@ -1,6 +1,10 @@
+import sys
 import threading
 import numpy as np
 import sounddevice as sd
+
+# Maximum recording duration to prevent memory exhaustion
+MAX_RECORDING_SECONDS = 300  # 5 minutes
 
 
 class AudioRecorder:
@@ -10,14 +14,22 @@ class AudioRecorder:
         self._recording = False
         self._lock = threading.Lock()
         self._stream: sd.InputStream | None = None
+        self._max_frames = 0
+        self._frames_count = 0
 
     def start(self):
         with self._lock:
             self._frames = []
+            self._frames_count = 0
             self._recording = True
 
         device = self._settings.get("input_device_index")
         sample_rate = self._settings.get("sample_rate", 16000)
+
+        # Calculate max frames based on sample rate and max duration
+        # Assuming ~1024 frames per callback (typical)
+        frames_per_second = sample_rate / 1024
+        self._max_frames = int(MAX_RECORDING_SECONDS * frames_per_second)
 
         self._stream = sd.InputStream(
             samplerate=sample_rate,
@@ -57,7 +69,17 @@ class AudioRecorder:
     def _callback(self, indata: np.ndarray, frames: int, time, status):
         with self._lock:
             if self._recording:
+                # Enforce max recording duration to prevent memory exhaustion
+                if self._frames_count >= self._max_frames:
+                    print(
+                        f"[AudioRecorder] Max recording duration ({MAX_RECORDING_SECONDS}s) reached, auto-stopping",
+                        file=sys.stderr,
+                    )
+                    self._recording = False
+                    return
+
                 self._frames.append(indata.copy())
+                self._frames_count += 1
 
     def list_devices(self) -> list[dict]:
         devices = sd.query_devices()

@@ -3,7 +3,21 @@
     "allow": [
       "WebFetch(domain:github.com)",
       "WebFetch(domain:raw.githubusercontent.com)",
-      "WebFetch(domain:pypi.org)"
+      "WebFetch(domain:pypi.org)",
+      "Bash(.venv/Scripts/pip install:*)",
+      "Bash(.venv/Scripts/python main.py)",
+      "Bash(/c/Users/m.belletti/Desktop/DictatorShipping/.venv/Scripts/python.exe main.py)",
+      "Bash(tasklist)",
+      "Bash(taskkill /PID 38412 /F)",
+      "Bash(taskkill /PID 33248 /F)",
+      "Bash(cmd //c \"taskkill /PID 38412 /F\")",
+      "Bash(cmd //c \"taskkill /PID 33248 /F\")",
+      "Bash(/c/Users/m.belletti/Desktop/DictatorShipping/.venv/Scripts/python.exe /c/Users/m.belletti/Desktop/DictatorShipping/main.py)",
+      "Bash(cmd //c \"taskkill /IM pythonw.exe /F\")",
+      "Bash(cmd //c \"/c/Users/m.belletti/Desktop/DictatorShipping/.venv/Scripts/python.exe /c/Users/m.belletti/Desktop/DictatorShipping/main.py 2>&1\")",
+      "Bash(git rm:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

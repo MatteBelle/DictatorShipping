@@ -44,6 +44,8 @@ class HotkeyManager:
         self._on_press_cb: Callable | None = None
         self._on_release_cb: Callable | None = None
         self._modifiers, self._trigger = _parse_hotkey(_HOTKEY)
+        self._cancel_trigger = None
+        self._cancel_cb: Callable | None = None
 
     def start(self, on_press_cb: Callable, on_release_cb: Callable):
         self._on_press_cb = on_press_cb
@@ -54,6 +56,10 @@ class HotkeyManager:
         )
         self._listener.daemon = True
         self._listener.start()
+
+    def set_cancel_callback(self, trigger_key, cb: Callable):
+        self._cancel_trigger = trigger_key
+        self._cancel_cb = cb
 
     def stop(self):
         if self._listener is not None:
@@ -92,6 +98,9 @@ class HotkeyManager:
                     self._hotkey_active = True
                     if self._on_press_cb:
                         self._on_press_cb()
+
+            if self._cancel_cb and self._cancel_trigger is not None and key == self._cancel_trigger:
+                self._cancel_cb()
 
     def _on_key_release(self, key):
         with self._lock:

@@ -32,22 +32,36 @@ class TextInjector:
         self._keyboard.type(text)
 
     def _inject_via_clipboard(self, text: str):
-        previous = ""
+        previous = None
+        clipboard_changed = False
+
         try:
-            previous = pyperclip.paste()
-        except Exception:
-            pass
+            # Only save clipboard if we're using fallback mode
+            # Minimizes exposure window
+            try:
+                previous = pyperclip.paste()
+                clipboard_changed = True
+            except Exception:
+                pass
 
-        pyperclip.copy(text)
-        time.sleep(0.05)
+            pyperclip.copy(text)
+            time.sleep(0.05)
 
-        paste_key = Key.cmd if sys.platform == "darwin" else Key.ctrl
-        with self._keyboard.pressed(paste_key):
-            self._keyboard.press("v")
-            self._keyboard.release("v")
+            paste_key = Key.cmd if sys.platform == "darwin" else Key.ctrl
+            with self._keyboard.pressed(paste_key):
+                self._keyboard.press("v")
+                self._keyboard.release("v")
 
-        time.sleep(0.1)
-        try:
-            pyperclip.copy(previous)
-        except Exception:
-            pass
+            time.sleep(0.1)
+
+        finally:
+            # Always restore clipboard in finally block
+            if clipboard_changed and previous is not None:
+                try:
+                    pyperclip.copy(previous)
+                except Exception:
+                    # If restore fails, at least clear the transcribed text
+                    try:
+                        pyperclip.copy("")
+                    except Exception:
+                        pass

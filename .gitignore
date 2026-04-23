@@ -40,3 +40,5 @@ desktop.ini
 # Local session notes (keep locally, not in repo)
 *.txt
 !requirements.txt
+
+LOCAL*
